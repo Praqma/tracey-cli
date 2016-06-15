@@ -9,7 +9,7 @@ usage: tracey [say | listen]
  -h,--help   Prints help
  ```
  
- ### Building the cli
+### Building the cli
  
  - Clone `https://github.com/Praqma/tracey-core` and run `gradle installToMavenLocal`
  - Clone `https://github.com/Praqma/tracey-broker` and run `gradle installToMavenLocal`
