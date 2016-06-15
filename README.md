@@ -1,10 +1,10 @@
 ## tracey-cli
 
-Basic command line tool for Tracey. Currently only a concept
+Basic command line tool for Tracey. 
 
-### Commands
-
-`tracey say (event_type) (json_file |  positional_args)`
-
-`tracey listen (event_type)`
-
+```
+usage: tracey [say | listen]
+ -c <arg>    Configuration file
+ -f          Specify this if the input is a file
+ -h,--help   Prints help
+ ```

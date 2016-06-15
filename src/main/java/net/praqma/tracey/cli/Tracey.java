@@ -29,7 +29,7 @@ public class Tracey {
 
     //Listen to events
     public static void listen(String source) {
-        broker.recieve(source);
+        broker.receive(source);
     }
 
     public static CommandLine parse(String[] args, Options opts) throws ParseException {
