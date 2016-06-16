@@ -20,7 +20,7 @@ public class Tracey {
 
     private static List<String> cmd = Arrays.asList("say", "listen");
 
-    static TraceyBroker broker = new TraceyRabbitMQBrokerImpl();
+    static TraceyBroker broker;
 
     //Say something
     public static String say(String json, String destination) throws TraceyIllegalEventException, TraceyValidatorError, TraceyIOError {
@@ -28,7 +28,7 @@ public class Tracey {
     }
 
     //Listen to events
-    public static void listen(String source) {
+    public static void listen(String source) throws TraceyValidatorError, TraceyIOError {
         broker.receive(source);
     }
 
@@ -41,19 +41,26 @@ public class Tracey {
         return cmd;
     }
 
-    public static void parseConfigFile(CommandLine cli) {
+
+    public static File parseConfigFile(CommandLine cli) {
         if(cli.hasOption("c")) {
             String path = cli.getOptionValue("c");
             System.out.println("Parsing config file: "+path);
             File f = new File(path);
-            broker.configure(f);
+            return f;
         }
+        return null;
     }
 
     public static void main(String[] args) throws Exception {
         Options opts = new Options();
         CommandLine cli = parse(args, opts);
-        parseConfigFile(cli);
+        File f = parseConfigFile(cli);
+        if(f != null) {
+            broker = new TraceyRabbitMQBrokerImpl(f);
+        } else {
+            broker = new TraceyRabbitMQBrokerImpl();
+        }
         if(cli.hasOption("h") || !cmd.contains(cli.getArgList().get(0))) {
             HelpFormatter formatter = new HelpFormatter();
             formatter.printHelp("tracey", opts);
