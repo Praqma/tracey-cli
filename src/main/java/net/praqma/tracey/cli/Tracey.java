@@ -63,7 +63,7 @@ public class Tracey {
         }
         if(cli.hasOption("h") || !cmd.contains(cli.getArgList().get(0))) {
             HelpFormatter formatter = new HelpFormatter();
-            formatter.printHelp("tracey", opts);
+            formatter.printHelp("tracey [say | listen] (options)\noptions:\n\n", opts);
         } else if(cli.getArgList().get(0).equals("say")) {
             //For say the 2nd parameter is optional (can be defined in config file)
             String destination = cli.getArgList().size() >= 2 ? cli.getArgList().get(2) : null;
