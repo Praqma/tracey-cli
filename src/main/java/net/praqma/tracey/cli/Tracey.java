@@ -53,6 +53,27 @@ public class Tracey {
         return null;
     }
 
+    public static void parseOptions(TraceyRabbitMQBrokerImpl broker, CommandLine cli) {
+
+        //Username override
+        if(cli.hasOption("u")) {
+            broker.getReceiver().setUsername(TraceyRabbitMQReceiverBuilder.expand(cli.getOptionValue("u")));
+            broker.getSender().setUsername(TraceyRabbitMQReceiverBuilder.expand(cli.getOptionValue("u")));
+        }
+
+        //password override
+        if(cli.hasOption("p")) {
+            broker.getReceiver().setPassword(TraceyRabbitMQReceiverBuilder.expand(cli.getOptionValue("p")));
+            broker.getSender().setPassword(TraceyRabbitMQReceiverBuilder.expand(cli.getOptionValue("p")));
+        }
+
+        //host override
+        if(cli.hasOption("a")) {
+            broker.getReceiver().setHost(TraceyRabbitMQReceiverBuilder.expand(cli.getOptionValue("a")));
+            broker.getSender().setHost(TraceyRabbitMQReceiverBuilder.expand(cli.getOptionValue("a")));
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         Options opts = new Options();
         CommandLine cli = parse(args, opts);
@@ -62,6 +83,9 @@ public class Tracey {
         } else {
             broker = new TraceyRabbitMQBrokerImpl();
         }
+        parseOptions((TraceyRabbitMQBrokerImpl)broker, cli);
+
+
 
         if(cli.hasOption("h") || !cmd.contains(cli.getArgList().get(0))) {
             HelpFormatter formatter = new HelpFormatter();
