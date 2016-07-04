@@ -37,6 +37,9 @@ public class Tracey {
         CommandLineParser parser = new DefaultParser();
         opts.addOption("c", true, "Configuration file");
         opts.addOption("f" , false, "Specify this if the input is a file");
+        opts.addOption("u", true, "Username override");
+        opts.addOption("p", true, "Password override");
+        opts.addOption("a", true, "Host override");
         opts.addOption("h", "help", false, "Prints help");
         CommandLine cmd = parser.parse(opts, args);
         return cmd;
