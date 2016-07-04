@@ -14,6 +14,7 @@ import net.praqma.tracey.broker.rabbitmq.TraceyRabbitMQBrokerImpl;
 import net.praqma.tracey.broker.TraceyBroker;
 import net.praqma.tracey.broker.TraceyIOError;
 import net.praqma.tracey.broker.TraceyValidatorError;
+import net.praqma.tracey.broker.rabbitmq.TraceyRabbitMQReceiverBuilder;
 import org.apache.commons.cli.HelpFormatter;
 
 public class Tracey {
@@ -61,12 +62,14 @@ public class Tracey {
         } else {
             broker = new TraceyRabbitMQBrokerImpl();
         }
+
         if(cli.hasOption("h") || !cmd.contains(cli.getArgList().get(0))) {
             HelpFormatter formatter = new HelpFormatter();
             formatter.printHelp("tracey [say | listen] (options)\noptions:\n\n", opts);
         } else if(cli.getArgList().get(0).equals("say")) {
             //For say the 2nd parameter is optional (can be defined in config file)
             String destination = cli.getArgList().size() >= 2 ? cli.getArgList().get(2) : null;
+            destination = TraceyRabbitMQReceiverBuilder.expand(destination);
             String msg = cli.getArgList().get(1);
             if(cli.hasOption("f")) {
                 msg = new String(Files.readAllBytes(Paths.get(cli.getArgList().get(1))));
