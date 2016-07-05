@@ -67,7 +67,7 @@ public class Tracey {
         //password override
         if(cli.hasOption("p")) {
             broker.getReceiver().setPassword(TraceyRabbitMQReceiverBuilder.expand(cli.getOptionValue("p")));
-            broker.getSender().setPassword(TraceyRabbitMQReceiverBuilder.expand(cli.getOptionValue("p")));
+            broker.getSender().setPw(TraceyRabbitMQReceiverBuilder.expand(cli.getOptionValue("p")));
         }
 
         //host override
