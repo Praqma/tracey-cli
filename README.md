@@ -16,3 +16,20 @@ options:
  - Clone `https://github.com/Praqma/tracey-core` and run `gradle installToMavenLocal`
  - Clone `https://github.com/Praqma/tracey-broker` and run `gradle installToMavenLocal`
  - To create the `jar` run the following command from this repository: `gradle uberjar` 
+
+### Configuration file
+
+Format as follows
+
+```
+broker {
+    rabbitmq {
+        host = 'localhost'
+		username = 'guest'
+        password = 'guest'
+        exchange = 'tracey'
+        type = 'topic'        
+    }
+}
+```
+
