@@ -13,8 +13,6 @@ options:
  
 ### Building the cli
  
- - Clone `https://github.com/Praqma/tracey-core` and run `gradle installToMavenLocal`
- - Clone `https://github.com/Praqma/tracey-broker` and run `gradle installToMavenLocal`
  - To create the `jar` run the following command from this repository: `gradle uberjar` 
 
 ### Configuration file
