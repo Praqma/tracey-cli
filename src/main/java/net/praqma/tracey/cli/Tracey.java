@@ -1,112 +1,96 @@
 package net.praqma.tracey.cli;
 
 import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.List;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
 import net.praqma.tracey.broker.rabbitmq.TraceyRabbitMQBrokerImpl;
-import net.praqma.tracey.broker.TraceyBroker;
-import net.praqma.tracey.broker.TraceyIOError;
-import net.praqma.tracey.broker.TraceyValidatorError;
-import net.praqma.tracey.broker.rabbitmq.TraceyRabbitMQReceiverBuilder;
-import org.apache.commons.cli.HelpFormatter;
+import net.praqma.tracey.broker.rabbitmq.TraceyRabbitMQBrokerImpl.ExchangeType;
+import net.sourceforge.argparse4j.ArgumentParsers;
+import net.sourceforge.argparse4j.inf.*;
 
 public class Tracey {
 
-    private static List<String> cmd = Arrays.asList("say", "listen");
+    //Sensible defaults:
+    static String host = "localhost";
+    static String exchange = "tracey";
+    static String user = "guest";
+    static String pw = "guest";
+    static int port = 5672;
+    static ExchangeType type = TraceyRabbitMQBrokerImpl.ExchangeType.TOPIC;
 
-    static TraceyBroker broker;
-
-    //Say something
-    public static String say(String json, String destination) throws TraceyIllegalEventException, TraceyValidatorError, TraceyIOError {
-        return broker.send(json, destination);
-    }
-
-    //Listen to events
-    public static void listen(String source) throws TraceyValidatorError, TraceyIOError {
-        broker.receive(source);
-    }
-
-    public static CommandLine parse(String[] args, Options opts) throws ParseException {
-        CommandLineParser parser = new DefaultParser();
-        opts.addOption("c", true, "Configuration file");
-        opts.addOption("f" , false, "Specify this if the input is a file");
-        opts.addOption("u", true, "Username override");
-        opts.addOption("p", true, "Password override");
-        opts.addOption("a", true, "Host override");
-        opts.addOption("h", "help", false, "Prints help");
-        CommandLine cmd = parser.parse(opts, args);
-        return cmd;
-    }
-
-
-    public static File parseConfigFile(CommandLine cli) {
-        if(cli.hasOption("c")) {
-            String path = cli.getOptionValue("c");
-            System.out.println("Parsing config file: "+path);
-            File f = new File(path);
-            return f;
-        }
-        return null;
-    }
-
-    public static void parseOptions(TraceyRabbitMQBrokerImpl broker, CommandLine cli) {
-
-        //Username override
-        if(cli.hasOption("u")) {
-            broker.getReceiver().setUsername(TraceyRabbitMQReceiverBuilder.expand(cli.getOptionValue("u")));
-            broker.getSender().setUsername(TraceyRabbitMQReceiverBuilder.expand(cli.getOptionValue("u")));
-        }
-
-        //password override
-        if(cli.hasOption("p")) {
-            broker.getReceiver().setPassword(TraceyRabbitMQReceiverBuilder.expand(cli.getOptionValue("p")));
-            broker.getSender().setPw(TraceyRabbitMQReceiverBuilder.expand(cli.getOptionValue("p")));
-        }
-
-        //host override
-        if(cli.hasOption("a")) {
-            broker.getReceiver().setHost(TraceyRabbitMQReceiverBuilder.expand(cli.getOptionValue("a")));
-            broker.getSender().setHost(TraceyRabbitMQReceiverBuilder.expand(cli.getOptionValue("a")));
-        }
-    }
+    static TraceyRabbitMQBrokerImpl broker;
 
     public static void main(String[] args) throws Exception {
-        Options opts = new Options();
-        CommandLine cli = parse(args, opts);
-        File f = parseConfigFile(cli);
-        if(f != null) {
-            broker = new TraceyRabbitMQBrokerImpl(f);
-        } else {
-            broker = new TraceyRabbitMQBrokerImpl();
+        ArgumentParser parser = ArgumentParsers.newArgumentParser("tracey")
+        .description("Send message with Tracey. Using RabbitMQ\n\nRun with arguments"
+                + " 'say -h' for help in sending messages\nRun with arguments 'listen -h' for help receiving messages");
+
+        Subparsers subparsers = parser.addSubparsers();
+        Subparser sayParser = subparsers.addParser("say").defaultHelp(true);
+        sayParser.addArgument("message");
+        sayParser.addArgument("-n", "--node").dest("node").help("The URL of the RabbitMQ server");
+        sayParser.addArgument("-e", "--exchange").setDefault("tracey").dest("exchange").help("Exhange name");
+        sayParser.addArgument("-u", "--user").dest("user").help("Username");
+        sayParser.addArgument("-s", "--secret").dest("secret").help("Password");
+        sayParser.addArgument("-p", "--port").dest("port").type(Integer.class).help("Port");
+        sayParser.addArgument("-c", "--configure").dest("config").help("Point to a config file");
+
+        Subparser listenParser = subparsers.addParser("listen").defaultHelp(true);
+        listenParser.addArgument("-n", "--node").dest("node").help("The URL of the RabbitMQ server");
+        listenParser.addArgument("-e", "--exchange").dest("exchange").setDefault("tracey").help("Exhange name");
+        listenParser.addArgument("-u", "--user").dest("user").help("Username");
+        listenParser.addArgument("-s", "--secret").dest("secret").help("Password");
+        listenParser.addArgument("-p", "--port").dest("port").type(Integer.class).help("Port");
+        listenParser.addArgument("-c", "--configure").dest("config").help("Point to a config file");
+
+        Namespace ns = null;
+        try {
+            ns = parser.parseArgs(args);
+        } catch (ArgumentParserException e) {
+            parser.handleError(e);
+            System.exit(1);
         }
-        parseOptions((TraceyRabbitMQBrokerImpl)broker, cli);
 
+        broker = new TraceyRabbitMQBrokerImpl(host, user, user, type, exchange);
 
-
-        if(cli.hasOption("h") || !cmd.contains(cli.getArgList().get(0))) {
-            HelpFormatter formatter = new HelpFormatter();
-            formatter.printHelp("tracey [say | listen] (options)\noptions:\n\n", opts);
-        } else if(cli.getArgList().get(0).equals("say")) {
-            //For say the 2nd parameter is optional (can be defined in config file)
-            String destination = cli.getArgList().size() >= 2 ? cli.getArgList().get(2) : null;
-            destination = TraceyRabbitMQReceiverBuilder.expand(destination);
-            String msg = cli.getArgList().get(1);
-            if(cli.hasOption("f")) {
-                msg = new String(Files.readAllBytes(Paths.get(cli.getArgList().get(1))));
-                say(msg, destination);
-            } else {
-                say(msg, destination);
-            }
-        } else {
-            String source = cli.getArgList().size() >= 2 ? cli.getArgList().get(1) : null;
-            listen(source);
+        if(ns.getString("config") != null) {
+            broker = new TraceyRabbitMQBrokerImpl(new File(ns.getString("config")));
         }
+
+        if(ns.getString("node") != null) {
+            broker.getReceiver().setHost(ns.getString("node"));
+            broker.getSender().setHost(ns.getString("node"));
+        }
+
+        if(ns.getString("secret") != null) {
+            broker.getReceiver().setPassword(ns.getString("secret"));
+            broker.getSender().setPw(ns.getString("secret"));
+        }
+
+        if(ns.getString("user") != null) {
+            broker.getReceiver().setUsername(ns.getString("user"));
+            broker.getSender().setUsername(ns.getString("user"));
+        }
+
+        if(ns.getInt("port") != null) {
+            broker.getReceiver().setPort(ns.getInt("port"));
+            broker.getSender().setPort(ns.getInt("port"));
+        }
+
+        if(ns.getString("type") != null) {
+            broker.getReceiver().setType(ExchangeType.valueOf(ns.getString("type")));
+            broker.getSender().setType(ExchangeType.valueOf(ns.getString("type")));
+        }
+
+        if(ns.getString("exchange") != null) {
+            broker.getReceiver().setExchange(ns.getString("exchange"));
+        }
+
+        broker.configure();
+
+        if(ns.get("message") == null) {
+            broker.receive(ns.getString("exchange"));
+        } else {
+            broker.send(ns.getString("message"), ns.getString("exchange"));
+        }
+
     }
 }
