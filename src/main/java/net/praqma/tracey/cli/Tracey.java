@@ -27,15 +27,15 @@ public class Tracey {
         Subparser sayParser = subparsers.addParser("say").defaultHelp(true);
         sayParser.addArgument("message");
         sayParser.addArgument("-n", "--node").dest("node").help("The URL of the RabbitMQ server");
-        sayParser.addArgument("-e", "--exchange").setDefault("tracey").dest("exchange").help("Exhange name");
+        sayParser.addArgument("-e", "--exchange").setDefault("tracey").help("Exhange name");
         sayParser.addArgument("-u", "--user").dest("user").help("Username");
         sayParser.addArgument("-s", "--secret").dest("secret").help("Password");
         sayParser.addArgument("-p", "--port").dest("port").type(Integer.class).help("Port");
         sayParser.addArgument("-c", "--configure").dest("config").help("Point to a config file");
 
-        Subparser listenParser = subparsers.addParser("listen").defaultHelp(true);
+        Subparser listenParser = subparsers.addParser("listen");
         listenParser.addArgument("-n", "--node").dest("node").help("The URL of the RabbitMQ server");
-        listenParser.addArgument("-e", "--exchange").dest("exchange").setDefault("tracey").help("Exhange name");
+        listenParser.addArgument("-e", "--exchange").dest("exchange").help("Exhange name");
         listenParser.addArgument("-u", "--user").dest("user").help("Username");
         listenParser.addArgument("-s", "--secret").dest("secret").help("Password");
         listenParser.addArgument("-p", "--port").dest("port").type(Integer.class).help("Port");
@@ -87,10 +87,17 @@ public class Tracey {
         broker.configure();
 
         if(ns.get("message") == null) {
-            broker.receive(ns.getString("exchange"));
+            if(ns.getString("exchange") != null) {
+                broker.receive(ns.getString("exchange"));
+            } else {
+                broker.receive(exchange);
+            }
         } else {
-            broker.send(ns.getString("message"), ns.getString("exchange"));
+            if(ns.getString("exchange") != null) {
+                broker.send(ns.getString("message"), ns.getString("exchange"));
+            } else {
+                broker.send(ns.getString("message"), exchange);
+            }
         }
-
     }
 }
