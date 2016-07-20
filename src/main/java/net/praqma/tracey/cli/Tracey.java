@@ -1,9 +1,13 @@
 package net.praqma.tracey.cli;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import net.praqma.tracey.broker.rabbitmq.TraceyRabbitMQBrokerImpl;
 import net.praqma.tracey.broker.rabbitmq.TraceyRabbitMQBrokerImpl.ExchangeType;
 import net.sourceforge.argparse4j.ArgumentParsers;
+import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.*;
 
 public class Tracey {
@@ -17,6 +21,11 @@ public class Tracey {
     static ExchangeType type = TraceyRabbitMQBrokerImpl.ExchangeType.TOPIC;
 
     static TraceyRabbitMQBrokerImpl broker;
+
+    public static String readFileToString(String path) throws IOException {
+        String content = new String(Files.readAllBytes(Paths.get(path)));
+        return content;
+    }
 
     public static void main(String[] args) throws Exception {
         ArgumentParser parser = ArgumentParsers.newArgumentParser("tracey")
@@ -32,6 +41,7 @@ public class Tracey {
         sayParser.addArgument("-s", "--secret").dest("secret").help("Password");
         sayParser.addArgument("-p", "--port").dest("port").type(Integer.class).help("Port");
         sayParser.addArgument("-c", "--configure").dest("config").help("Point to a config file");
+        sayParser.addArgument("-f", "--file-payload").dest("payload").action(Arguments.storeTrue()).help("This message is a file. Read the contents");
 
         Subparser listenParser = subparsers.addParser("listen");
         listenParser.addArgument("-n", "--node").dest("node").help("The URL of the RabbitMQ server");
@@ -86,17 +96,29 @@ public class Tracey {
 
         broker.configure();
 
-        if(ns.get("message") == null) {
+        String message = ns.getString("message");
+
+        if(message == null) {
             if(ns.getString("exchange") != null) {
                 broker.receive(ns.getString("exchange"));
             } else {
                 broker.receive(exchange);
             }
         } else {
+
+            String actualMessage = message;
+
+            if(ns.getBoolean("payload")) {
+                actualMessage = readFileToString(message);
+            }
+
             if(ns.getString("exchange") != null) {
-                broker.send(ns.getString("message"), ns.getString("exchange"));
+                broker.send(actualMessage, ns.getString("exchange"));
             } else {
-                broker.send(ns.getString("message"), exchange);
+                //If no exchange is specifed. Use the value from the receiver. We assume
+                //that we listen and send to the same exchange.
+                broker.send(actualMessage, broker.getReceiver().getExchange());
+
             }
         }
     }
