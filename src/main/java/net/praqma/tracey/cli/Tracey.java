@@ -1,14 +1,18 @@
 package net.praqma.tracey.cli;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import net.praqma.tracey.broker.rabbitmq.RabbitMQRoutingInfo;
 import net.praqma.tracey.broker.rabbitmq.TraceyRabbitMQBrokerImpl;
 import net.praqma.tracey.broker.rabbitmq.TraceyRabbitMQBrokerImpl.ExchangeType;
 import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.*;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Tracey {
 
@@ -17,10 +21,13 @@ public class Tracey {
     static String exchange = "tracey";
     static String user = "guest";
     static String pw = "guest";
+    static String routingkey = "";
+    static int deliveryMode = 1;
     static int port = 5672;
     static ExchangeType type = TraceyRabbitMQBrokerImpl.ExchangeType.TOPIC;
 
     static TraceyRabbitMQBrokerImpl broker;
+    static Map<String, Object> headers = new HashMap<String, Object>();
 
     public static String readFileToString(String path) throws IOException {
         String content = new String(Files.readAllBytes(Paths.get(path)));
@@ -38,6 +45,7 @@ public class Tracey {
         sayParser.addArgument("-n", "--node").dest("node").help("The URL of the RabbitMQ server");
         sayParser.addArgument("-e", "--exchange").setDefault("tracey").help("Exhange name");
         sayParser.addArgument("-u", "--user").dest("user").help("Username");
+        sayParser.addArgument("-h", "--headers").dest("headers").help("Add attribute file to the message");
         sayParser.addArgument("-s", "--secret").dest("secret").help("Password");
         sayParser.addArgument("-p", "--port").dest("port").type(Integer.class).help("Port");
         sayParser.addArgument("-c", "--configure").dest("config").help("Point to a config file");
@@ -47,6 +55,7 @@ public class Tracey {
         listenParser.addArgument("-n", "--node").dest("node").help("The URL of the RabbitMQ server");
         listenParser.addArgument("-e", "--exchange").dest("exchange").help("Exhange name");
         listenParser.addArgument("-u", "--user").dest("user").help("Username");
+        listenParser.addArgument("-h", "--headers").dest("headers").help("Add attribute file to the message");
         listenParser.addArgument("-s", "--secret").dest("secret").help("Password");
         listenParser.addArgument("-p", "--port").dest("port").type(Integer.class).help("Port");
         listenParser.addArgument("-c", "--configure").dest("config").help("Point to a config file");
@@ -62,7 +71,11 @@ public class Tracey {
         broker = new TraceyRabbitMQBrokerImpl(host, user, user, type, exchange);
 
         if(ns.getString("config") != null) {
-            broker = new TraceyRabbitMQBrokerImpl(new File(ns.getString("config")));
+            File config = new File(ns.getString("config"));
+            broker = new TraceyRabbitMQBrokerImpl(config);
+            exchange = (String)FileUtil.readFromFile(config).get("broker.rabbitmq.exchange.name");
+            deliveryMode = (int)FileUtil.readFromFile(config).get("broker.rabbitmq.properties.deliverymode");
+            routingkey = (String)FileUtil.readFromFile(config).get("broker.rabbitmq.properties.routingkey");
         }
 
         if(ns.getString("node") != null) {
@@ -97,13 +110,16 @@ public class Tracey {
         broker.configure();
 
         String message = ns.getString("message");
+        // Check if we have headers file
+        if(ns.getString("headers") != null){
+            File file = new File(ns.getString("headers"));
+            headers = FileUtil.readFromFile(file);
+        }
+        RabbitMQRoutingInfo data = new RabbitMQRoutingInfo(headers, exchange, deliveryMode, routingkey);
 
         if(message == null) {
-            if(ns.getString("exchange") != null) {
-                broker.receive(ns.getString("exchange"));
-            } else {
-                broker.receive(exchange);
-            }
+            broker.receive(data);
+
         } else {
 
             String actualMessage = message;
@@ -111,15 +127,7 @@ public class Tracey {
             if(ns.getBoolean("payload")) {
                 actualMessage = readFileToString(message);
             }
-
-            if(ns.getString("exchange") != null) {
-                broker.send(actualMessage, ns.getString("exchange"));
-            } else {
-                //If no exchange is specifed. Use the value from the receiver. We assume
-                //that we listen and send to the same exchange.
-                broker.send(actualMessage, broker.getReceiver().getExchange());
-
-            }
+            broker.send(actualMessage, data);
         }
     }
 }
