@@ -22,11 +22,23 @@ Format as follows
 ```
 broker {
     rabbitmq {
-        host = 'localhost'
-		username = 'guest'
-        password = 'guest'
-        exchange = 'tracey'
-        type = 'topic'        
+    	connection {
+        	host = 'some.host.name'
+        	port = 4444
+        	userName = 'myuser'
+        	password = 's0m3p4ss'
+        	automaticRecovery = true
+        }
+        routingInfo {
+        	exchangeName = 'stacie'
+        	exchangeType = 'fanout'
+        	routingKey = ''
+        	deliveryMode = 1
+        	headers {
+        		someKey = 'someValue'
+        		someKey1 = 0
+        	}
+        }
     }
 }
 ```

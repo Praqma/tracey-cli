@@ -1,8 +1,6 @@
 package net.praqma.tracey.cli;
 
-import net.praqma.tracey.broker.rabbitmq.RabbitMQRoutingInfo;
-import net.praqma.tracey.broker.rabbitmq.TraceyRabbitMQBrokerImpl;
-import net.praqma.tracey.broker.rabbitmq.TraceyRabbitMQBrokerImpl.ExchangeType;
+import net.praqma.tracey.broker.rabbitmq.*;
 import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.*;
@@ -16,18 +14,9 @@ import java.util.Map;
 
 public class Tracey {
 
-    //Sensible defaults:
-    static String host = "localhost";
-    static String exchange = "tracey";
-    static String user = "guest";
-    static String pw = "guest";
-    static String routingkey = "";
-    static int deliveryMode = 1;
-    static int port = 5672;
-    static ExchangeType type = TraceyRabbitMQBrokerImpl.ExchangeType.TOPIC;
-
-    static TraceyRabbitMQBrokerImpl broker;
-    static Map<String, Object> headers = new HashMap<String, Object>();
+    private static TraceyRabbitMQBrokerImpl broker;
+    private static RabbitMQRoutingInfo routingInfo;
+    private static Map<String, Object> headers = new HashMap<>();
 
     public static String readFileToString(String path) throws IOException {
         String content = new String(Files.readAllBytes(Paths.get(path)));
@@ -68,57 +57,53 @@ public class Tracey {
             System.exit(1);
         }
 
-        broker = new TraceyRabbitMQBrokerImpl(host, user, user, type, exchange);
+        broker = new TraceyRabbitMQBrokerImpl();
+        routingInfo = new RabbitMQRoutingInfo();
 
         if(ns.getString("config") != null) {
             File config = new File(ns.getString("config"));
             broker = new TraceyRabbitMQBrokerImpl(config);
-            exchange = (String)FileUtil.readFromFile(config).get("broker.rabbitmq.exchange.name");
-            deliveryMode = (int)FileUtil.readFromFile(config).get("broker.rabbitmq.properties.deliverymode");
-            routingkey = (String)FileUtil.readFromFile(config).get("broker.rabbitmq.properties.routingkey");
+            routingInfo = RabbitMQRoutingInfo.buildFromConfigFile(config);
         }
 
         if(ns.getString("node") != null) {
-            broker.getReceiver().setHost(ns.getString("node"));
-            broker.getSender().setHost(ns.getString("node"));
+            broker.getReceiver().getConnection().setHost(ns.getString("node"));
+            broker.getSender().getConnection().setHost(ns.getString("node"));
         }
 
         if(ns.getString("secret") != null) {
-            broker.getReceiver().setPassword(ns.getString("secret"));
-            broker.getSender().setPw(ns.getString("secret"));
+            broker.getReceiver().getConnection().setPassword(ns.getString("secret"));
+            broker.getSender().getConnection().setPassword(ns.getString("secret"));
         }
 
         if(ns.getString("user") != null) {
-            broker.getReceiver().setUsername(ns.getString("user"));
-            broker.getSender().setUsername(ns.getString("user"));
+            broker.getReceiver().getConnection().setUserName(ns.getString("user"));
+            broker.getSender().getConnection().setUserName(ns.getString("user"));
         }
 
         if(ns.getInt("port") != null) {
-            broker.getReceiver().setPort(ns.getInt("port"));
-            broker.getSender().setPort(ns.getInt("port"));
+            broker.getReceiver().getConnection().setPort(ns.getInt("port"));
+            broker.getSender().getConnection().setPort(ns.getInt("port"));
         }
 
         if(ns.getString("type") != null) {
-            broker.getReceiver().setType(ExchangeType.valueOf(ns.getString("type")));
-            broker.getSender().setType(ExchangeType.valueOf(ns.getString("type")));
+            routingInfo.setExchangeType(ns.getString("type"));
         }
 
         if(ns.getString("exchange") != null) {
-            broker.getReceiver().setExchange(ns.getString("exchange"));
+            routingInfo.setExchangeName(ns.getString("exchange"));
         }
-
-        broker.configure();
 
         String message = ns.getString("message");
         // Check if we have headers file
         if(ns.getString("headers") != null){
             File file = new File(ns.getString("headers"));
             headers = FileUtil.readFromFile(file);
+            routingInfo.setHeaders(headers);
         }
-        RabbitMQRoutingInfo data = new RabbitMQRoutingInfo(headers, exchange, deliveryMode, routingkey);
 
         if(message == null) {
-            broker.receive(data);
+            broker.receive(routingInfo);
 
         } else {
 
@@ -127,7 +112,7 @@ public class Tracey {
             if(ns.getBoolean("payload")) {
                 actualMessage = readFileToString(message);
             }
-            broker.send(actualMessage, data);
+            broker.send(actualMessage, routingInfo);
         }
     }
 }
