@@ -11,11 +11,13 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.logging.Logger;
 
 public class Tracey {
 
     private static TraceyRabbitMQBrokerImpl broker;
     private static RabbitMQRoutingInfo routingInfo;
+    private static final Logger LOG = Logger.getLogger(Tracey.class.getName());
 
     public static String readFileToString(String path) throws IOException {
         String content = new String(Files.readAllBytes(Paths.get(path)));
@@ -121,6 +123,13 @@ public class Tracey {
                 actualMessage = readFileToString(message);
             }
             broker.send(actualMessage, routingInfo);
+            LOG.info(String.format("Message sent succesfully\nhost: %s \nport: %s \nexchange name: %s \nexchange type: %s \ndelivery mode: %s \nheaders: %s",
+                    broker.getSender().getConnection().getHost(),
+                    broker.getSender().getConnection().getPort(),
+                    routingInfo.getExchangeName(),
+                    routingInfo.getExchangeType(),
+                    routingInfo.getDeliveryMode(),
+                    routingInfo.getHeaders().toString()));
         }
         System.exit(0);
     }
