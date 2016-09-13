@@ -1,5 +1,6 @@
 package net.praqma.tracey.cli;
 
+import net.praqma.tracey.broker.impl.rabbitmq.RabbitMQDefaults;
 import net.praqma.tracey.broker.impl.rabbitmq.RabbitMQRoutingInfo;
 import net.praqma.tracey.broker.impl.rabbitmq.TraceyRabbitMQBrokerImpl;
 import net.sourceforge.argparse4j.ArgumentParsers;
@@ -24,18 +25,21 @@ public class Tracey {
     public static void main(String[] args) throws Exception {
         ArgumentParser parser = ArgumentParsers.newArgumentParser("tracey")
         .description("Send message with Tracey. Using RabbitMQ\n\nRun with arguments" +
-                " 'say -h' for help in sending messages\nRun with arguments 'listen -h' for help receiving messages\n" +
+                "'say -h' for help in sending messages\nRun with arguments 'listen -h' for help receiving messages.\n" +
+                "You may use environment variable names for user name and password to avoid storing\n " +
+                "them in plain text. Use the following format - %SOMETEXT%, ${SOMETEXT}, $SOMETEXT, $SOMETEXT$.\n" +
                 "Please notice command line options will override values provided through the configuration file\n" +
                 "If no arguments will be provided, a connection will be configured with default values:\n" +
-                "       node \"localhost\"\n" +
-                "       port 5672\n" +
-                "       user \"guest\"\n" +
-                "       password \"guest\"\n" +
-                "       exchange type DIRECT\n" +
-                "       exchange name \"tracey\"\n" +
-                "       delivery mode 0\n" +
-                "       routing key \"\"\n" +
-                "       headers []");
+                String.format("host: %s", RabbitMQDefaults.HOST) + "\n" +
+                String.format("port: %s", RabbitMQDefaults.PORT) + "\n" +
+                String.format("user: %s", RabbitMQDefaults.USERNAME) + "\n" +
+                String.format("password: %s", RabbitMQDefaults.PASSWORD) + "\n" +
+                String.format("exchange type: %s", RabbitMQDefaults.EXCHANGE_TYPE) + "\n" +
+                String.format("exchange name: %s", RabbitMQDefaults.EXCHANGE_NAME) + "\n" +
+                String.format("delivery mode: %s", RabbitMQDefaults.DELEIVERY_MODE) + "\n" +
+                String.format("headers: %s", RabbitMQDefaults.HEADERS) + "\n"
+
+        );
         Subparsers subparsers = parser.addSubparsers();
         Subparser sayParser = subparsers.addParser("say");
         sayParser.addArgument("message");

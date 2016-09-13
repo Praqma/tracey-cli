@@ -19,8 +19,7 @@ repositories {
 dependencies {
     compile 'com.github.Praqma:tracey-broker:1.0.0'
     compile 'net.sourceforge.argparse4j:argparse4j:0.7.0'
-    compile 'org.codehaus.groovy:groovy:2.4.7'
-}
+ }
 
 jar {
     doFirst {
