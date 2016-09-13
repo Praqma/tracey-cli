@@ -1,6 +1,7 @@
 package net.praqma.tracey.cli;
 
-import net.praqma.tracey.broker.rabbitmq.*;
+import net.praqma.tracey.broker.impl.rabbitmq.RabbitMQRoutingInfo;
+import net.praqma.tracey.broker.impl.rabbitmq.TraceyRabbitMQBrokerImpl;
 import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.impl.Arguments;
 import net.sourceforge.argparse4j.inf.*;
@@ -9,14 +10,11 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Map;
 
 public class Tracey {
 
     private static TraceyRabbitMQBrokerImpl broker;
     private static RabbitMQRoutingInfo routingInfo;
-    private static Map<String, Object> headers = new HashMap<>();
 
     public static String readFileToString(String path) throws IOException {
         String content = new String(Files.readAllBytes(Paths.get(path)));
@@ -25,16 +23,25 @@ public class Tracey {
 
     public static void main(String[] args) throws Exception {
         ArgumentParser parser = ArgumentParsers.newArgumentParser("tracey")
-        .description("Send message with Tracey. Using RabbitMQ\n\nRun with arguments"
-                + " 'say -h' for help in sending messages\nRun with arguments 'listen -h' for help receiving messages");
-
+        .description("Send message with Tracey. Using RabbitMQ\n\nRun with arguments" +
+                " 'say -h' for help in sending messages\nRun with arguments 'listen -h' for help receiving messages\n" +
+                "Please notice command line options will override values provided through the configuration file\n" +
+                "If no arguments will be provided, a connection will be configured with default values:\n" +
+                "       node \"localhost\"\n" +
+                "       port 5672\n" +
+                "       user \"guest\"\n" +
+                "       password \"guest\"\n" +
+                "       exchange type DIRECT\n" +
+                "       exchange name \"tracey\"\n" +
+                "       delivery mode 0\n" +
+                "       routing key \"\"\n" +
+                "       headers []");
         Subparsers subparsers = parser.addSubparsers();
-        Subparser sayParser = subparsers.addParser("say").defaultHelp(true);
+        Subparser sayParser = subparsers.addParser("say");
         sayParser.addArgument("message");
         sayParser.addArgument("-n", "--node").dest("node").help("The URL of the RabbitMQ server");
-        sayParser.addArgument("-e", "--exchange").setDefault("tracey").help("Exhange name");
+        sayParser.addArgument("-e", "--exchange").help("Exhange name");
         sayParser.addArgument("-u", "--user").dest("user").help("Username");
-        sayParser.addArgument("-h", "--headers").dest("headers").help("Add attribute file to the message");
         sayParser.addArgument("-s", "--secret").dest("secret").help("Password");
         sayParser.addArgument("-p", "--port").dest("port").type(Integer.class).help("Port");
         sayParser.addArgument("-c", "--configure").dest("config").help("Point to a config file");
@@ -44,7 +51,6 @@ public class Tracey {
         listenParser.addArgument("-n", "--node").dest("node").help("The URL of the RabbitMQ server");
         listenParser.addArgument("-e", "--exchange").dest("exchange").help("Exhange name");
         listenParser.addArgument("-u", "--user").dest("user").help("Username");
-        listenParser.addArgument("-h", "--headers").dest("headers").help("Add attribute file to the message");
         listenParser.addArgument("-s", "--secret").dest("secret").help("Password");
         listenParser.addArgument("-p", "--port").dest("port").type(Integer.class).help("Port");
         listenParser.addArgument("-c", "--configure").dest("config").help("Point to a config file");
@@ -95,12 +101,6 @@ public class Tracey {
         }
 
         String message = ns.getString("message");
-        // Check if we have headers file
-        if(ns.getString("headers") != null){
-            File file = new File(ns.getString("headers"));
-            headers = FileUtil.readFromFile(file);
-            routingInfo.setHeaders(headers);
-        }
 
         if(message == null) {
             broker.receive(routingInfo);
