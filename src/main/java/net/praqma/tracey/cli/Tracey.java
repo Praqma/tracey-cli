@@ -23,23 +23,27 @@ public class Tracey {
     }
 
     public static void main(String[] args) throws Exception {
+        final String description = String.format(
+                "Send or receive messages with using RabbitMQ\n\n" +
+                "Run with the following positional arguments:\n" +
+                "'say -h' to see how to send messages\n" +
+                "'listen -h' to see how to receive messages\n\n" +
+                "Tips\nYou can use environment variable names for user name and password to avoid storing them in plain text.\n" +
+                "Use the following format - %%SOMETEXT%%, ${SOMETEXT}, $SOMETEXT, $SOMETEXT$.\n\n" +
+                "Notice command line options will override values provided through the configuration file.\n" +
+                "If a certain option not provided neither through configuration file or command line argument then\n" +
+                "the following default value will be used:\n" +
+                "host: %s \nport: %s \nuser: %s \npassword: %s \nexchange name: %s \nexchange type: %s \ndelivery mode: %s \nheaders: %s",
+                RabbitMQDefaults.HOST,
+                RabbitMQDefaults.PORT,
+                RabbitMQDefaults.USERNAME,
+                RabbitMQDefaults.PASSWORD,
+                RabbitMQDefaults.EXCHANGE_NAME,
+                RabbitMQDefaults.EXCHANGE_TYPE,
+                RabbitMQDefaults.DELEIVERY_MODE,
+                RabbitMQDefaults.HEADERS.toString());
         ArgumentParser parser = ArgumentParsers.newArgumentParser("tracey")
-        .description("Send message with Tracey. Using RabbitMQ\n\nRun with arguments" +
-                "'say -h' for help in sending messages\nRun with arguments 'listen -h' for help receiving messages.\n" +
-                "You may use environment variable names for user name and password to avoid storing\n " +
-                "them in plain text. Use the following format - %SOMETEXT%, ${SOMETEXT}, $SOMETEXT, $SOMETEXT$.\n" +
-                "Please notice command line options will override values provided through the configuration file\n" +
-                "If no arguments will be provided, a connection will be configured with default values:\n" +
-                String.format("host: %s", RabbitMQDefaults.HOST) + "\n" +
-                String.format("port: %s", RabbitMQDefaults.PORT) + "\n" +
-                String.format("user: %s", RabbitMQDefaults.USERNAME) + "\n" +
-                String.format("password: %s", RabbitMQDefaults.PASSWORD) + "\n" +
-                String.format("exchange type: %s", RabbitMQDefaults.EXCHANGE_TYPE) + "\n" +
-                String.format("exchange name: %s", RabbitMQDefaults.EXCHANGE_NAME) + "\n" +
-                String.format("delivery mode: %s", RabbitMQDefaults.DELEIVERY_MODE) + "\n" +
-                String.format("headers: %s", RabbitMQDefaults.HEADERS) + "\n"
-
-        );
+        .description(description);
         Subparsers subparsers = parser.addSubparsers();
         Subparser sayParser = subparsers.addParser("say");
         sayParser.addArgument("message");
