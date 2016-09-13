@@ -118,5 +118,6 @@ public class Tracey {
             }
             broker.send(actualMessage, routingInfo);
         }
+        System.exit(0);
     }
 }
