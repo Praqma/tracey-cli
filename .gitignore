@@ -3,3 +3,5 @@ build
 .nb-gradle
 .nb-gradle-properties
 .idea/
+*.iml
+*.json
