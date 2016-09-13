@@ -11,10 +11,6 @@ options:
  -h,--help   Prints help
  ```
  
-### Building the cli
- 
- - To create the `jar` run the following command from this repository: `gradle uberjar` 
-
 ### Configuration file
 
 Format as follows
@@ -43,3 +39,49 @@ broker {
 }
 ```
 
+### Variable expansion
+
+Please note that you can use environment variable names for user name and password to avoid storing them in plain text.
+Use the following format - %SOMETEXT%, ${SOMETEXT}, $SOMETEXT, $SOMETEXT$.
+See example below
+
+```
+broker {
+    rabbitmq {
+        connection {
+            host = 'some.host.name'
+            port = 4444
+            userName = '${USERNAME}'
+            password = '${PASSWORD}'
+            automaticRecovery = true
+        }
+    }
+}
+```
+
+### Defaults
+
+You don't have to specify all fields in the configuration file - if some piece is not provided then default value will be used.
+Check output of the --help to see the actual values.
+See example below
+
+```
+broker {
+    rabbitmq {
+        connection {
+            host = 'my.host'
+            userName = '${USERNAME}'
+            password = '${PASSWORD}'
+        }
+    }
+}
+```
+
+### Get official build
+
+Official builds are done by [JitPack](https://jitpack.io)
+
+```
+export VERSION=39e02b7dd9 #Any commit or tag
+curl -o tracey-cli-rabbitmq.jar https://jitpack.io/com/github/Praqma/tracey-cli-rabbitmq/$VERSION/tracey-cli-rabbitmq-$VERSION.jar
+```
