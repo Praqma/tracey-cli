@@ -1,3 +1,4 @@
+[![Build Status](https://api.travis-ci.org/Praqma/tracey-cli-rabbitmq.svg?branch=master)](https://travis-ci.org/Praqma/tracey-cli-rabbitmq)
 ---
 maintainer: andrey9kin, alexsedova
 ---
