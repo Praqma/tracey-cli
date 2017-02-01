@@ -1,3 +1,6 @@
+---
+maintainer: andrey9kin, alexsedova
+---
 ## tracey-cli
 
 Basic command line tool for Tracey. Primarily used as a testbed for tracey
