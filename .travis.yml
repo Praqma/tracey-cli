@@ -1,10 +1,16 @@
 language: java
 jdk:
-  - oraclejdk8
-
+- oraclejdk8
 cache:
   directories:
-  - $HOME/.gradle
-
+  - "$HOME/.gradle"
 script:
-  - ./gradlew clean check
+- "./gradlew clean check"
+deploy:
+  provider: releases
+  api_key:
+    secure: akRMUzNnsSaEnShbKkawyvz6NxoGLXl5cPHj68u9N+jEl/NqARMwbm8l4XTYeZ7dR5WWPYZGAetrOCm/D+np+oJWkvEEGg9rKd4JuRfTlmweto1QF9NfiVqbMfeFFGGnjI7nHVyuiDeRPdTgShS0gB2NWdAjy+Ts5LpbjgUS0qVUuKShzYwXmeNf6jBH7InQ/lUFh79YU5+Jt9Q7GM7uRxzfUAaDdKT1rQDC9sl2J6PlpnqXNanq7x4q7Btrt733WZiuTLo4zH8NlkZfNLkXTPGjq6z+XAi7btk7of/OEVzsx7eDSq0bhXxzM7UdTx8/CkZ1O+DLpDppbKbJy059Y/ZD1ThEVdJyhCaA8sMeVdQsg81dyawKX1XVvkVp+AmqkRGN+u9WzEB1H4kyZWVoucrOHIqhzi8adnyipOp7143HJ3PgBlImCVBxF3HetO4oCMX36jpWOyJyF228q84T9go4mgwka3m3wb9Vs/kTEqV73IhMo8kLEqhHkQ/R4IhndzCIFzBzeJm9Cw7gBFz2z3Dide59+lGdLjPc86WTrHg4JV6rksS24a6fwf+Mc9Z1ITHIIZtcLcT2JK0E3QM83wjqz2UNZZfY3GEsTQbU5y9UZvoCK8OF82H+ALYgA/ur+nqONYhunv8JDcXVtN+DAUrVXAYp+4MTxVyaTAXcH3s=
+  file: build/libs/tracey-cli-rabbitmq.jar
+  skip_cleanup: true
+  on:
+    tags: true
